@@ -1,14 +1,17 @@
 ﻿using EFIntro.Entities;
+using EFIntro.Service.DTOs.Book;
 
 namespace EFIntro.Service.Interfaces
 {
     public interface IBookService
     {
-        void Save(Book book);
-        void Delete(int bookId);
+        bool Create(BookCreateDto bookDto, out List<string> errors);
+        bool Update(BookUpdateDto bookDto, out List<string> errors);
+
+        bool Delete(int bookId, out List<string> errors);
         bool Exist(string bookTitle, int bookAuthorId, int? excludeId = null);
-        List<Book> GetAll(string sortedBy = "Title", bool include = false);
-        Book? GetById(int bookId, bool include = false, bool tracked = false);
-        List<IGrouping<int, Book>> BooksGroupByAuthor();
+        List<BookListDto> GetAll(string sortedBy = "Title");
+        BookDto? GetById(int bookId);
+        List<BooksWithAuthorDto> BooksGroupByAuthor();
     }
 }

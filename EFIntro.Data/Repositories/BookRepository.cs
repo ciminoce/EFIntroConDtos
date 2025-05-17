@@ -13,10 +13,11 @@ namespace EFIntro.Data.Repositories
             _context = context;
         }
 
-        public List<Book> GetAll(string sortedBy = "Title", bool include = false)
+        public List<Book> GetAll(string sortedBy = "Title")
         {
-            IQueryable<Book> query = _context.Books.AsNoTracking();
-            query=include?query.Include(b=>b.Author):query;
+            IQueryable<Book> query = _context.Books
+                .Include(b=>b.Author)
+                .AsNoTracking();
             return sortedBy switch
             {
                 "Title" => query.OrderBy(b => b.Title)
@@ -36,19 +37,18 @@ namespace EFIntro.Data.Repositories
         public void Add(Book book)
         {
             _context.Books.Add(book);
-            _context.SaveChanges();
         }
         public void Update(Book book)
         {
             var bookInDb = GetById(book.Id);
             if (bookInDb != null)
             {
+                bookInDb.Id=book.Id;
                 bookInDb.Title = book.Title;
                 bookInDb.AuthorId = book.AuthorId;
                 bookInDb.PublishDate = book.PublishDate;
                 bookInDb.Pages = book.Pages;
-
-                _context.SaveChanges();
+                _context.Entry(bookInDb).State = EntityState.Modified;
             }
         }
         public void Delete(int bookId)
@@ -57,7 +57,6 @@ namespace EFIntro.Data.Repositories
             if (bookInDb != null)
             {
                 _context.Books.Remove(bookInDb);
-                _context.SaveChanges();
             }
 
         }
@@ -70,9 +69,9 @@ namespace EFIntro.Data.Repositories
                     && b.AuthorId == bookAuthorId);
         }
 
-        public List<IGrouping<int, Book>> BooksGroupByAuthor()
+        public void SaveChanges()
         {
-            return _context.Books.GroupBy(b=>b.AuthorId).ToList();
+            _context.SaveChanges();
         }
     }
 }

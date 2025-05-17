@@ -1,11 +1,11 @@
 ﻿using EFIntro.Entities;
 using FluentValidation;
 
-namespace EFIntro.Consola.Validators
+namespace EFIntro.Service.Validators
 {
-    public class BooksValidator : AbstractValidator<Book>
+    public class BookValidator : AbstractValidator<Book>
     {
-        public BooksValidator()
+        public BookValidator()
         {
             RuleFor(b => b.Title).NotEmpty().WithMessage("The {PropertyName} is required")
                 .MaximumLength(300).WithMessage("The {PropertyName} must have no more than {ComparisonValue} characters");

@@ -52,6 +52,28 @@ namespace EFIntro.Service.Services
             return true;
         }
 
+        public bool Create(AuthorCreateDto authorDto, out AuthorDto? authorCreated, out List<string> errors)
+        {
+            errors = new List<string>();
+            authorCreated = null;
+            Author author = AuthorMapper.ToEntity(authorDto);
+            if (_authorRepository.Exist(authorDto.FirstName,
+                    authorDto.LastName))
+            {
+                errors.Add("Author already exist");
+                return false;
+            }
+            var authorValidator = new AuthorValidator();
+            if (!UniversalValidator.IsValid(author, authorValidator, out errors))
+            {
+                return false;
+            }
+            _authorRepository.Add(author);
+            _authorRepository.SaveChanges();
+            authorCreated = AuthorMapper.ToDto(author);
+            return true;
+        }
+
         public bool Delete(int authorId, out List<string>errors)
         {
             errors = new List<string>();

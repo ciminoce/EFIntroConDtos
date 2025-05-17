@@ -1,10 +1,10 @@
-﻿using EFIntro.Entities;
-using EFIntro.Service.DTOs.Author;
+﻿using EFIntro.Service.DTOs.Author;
 
 namespace EFIntro.Service.Interfaces
 {
     public interface IAuthorService
     {
+        bool Create(AuthorCreateDto authorDto, out AuthorDto? authorCreated, out List<string> errors);
         bool Create(AuthorCreateDto authorDto, out List<string> errors);
         bool Update(AuthorUpdateDto authorDto, out List<string> errors);
         bool Delete(int authorId, out List<string> errors);

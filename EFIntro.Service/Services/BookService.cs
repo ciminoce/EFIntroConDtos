@@ -1,6 +1,10 @@
 ﻿using EFIntro.Data.Interfaces;
 using EFIntro.Entities;
+using EFIntro.Service.DTOs.Author;
+using EFIntro.Service.DTOs.Book;
 using EFIntro.Service.Interfaces;
+using EFIntro.Service.Mappers;
+using EFIntro.Service.Validators;
 
 namespace EFIntro.Service.Services
 {
@@ -13,14 +17,18 @@ namespace EFIntro.Service.Services
             _bookRepository = repository;
         }
 
-        public List<IGrouping<int, Book>> BooksGroupByAuthor()
-        {
-            return _bookRepository.BooksGroupByAuthor();
-        }
 
-        public void Delete(int bookId)
+        public bool Delete(int bookId, out List<string> errors)
         {
+            errors = new List<string>();
+            if(_bookRepository.GetById(bookId) is null)
+            {
+                errors.Add("Book ID not found");
+                return false;
+            }
             _bookRepository.Delete(bookId);
+            _bookRepository.SaveChanges();
+            return true;
         }
 
         public bool Exist(string bookTitle, int bookAuthorId, int? excludeId = null)
@@ -28,26 +36,73 @@ namespace EFIntro.Service.Services
             return _bookRepository.Exist(bookTitle, bookAuthorId, excludeId);
         }
 
-        public List<Book> GetAll(string sortedBy = "Title", bool include=false)
+        public List<BookListDto> GetAll(string sortedBy = "Title")
         {
-            return _bookRepository.GetAll(sortedBy,true);
+            var books= _bookRepository.GetAll(sortedBy);
+            return books.Select(BookMapper.ToBookListDto).ToList();
         }
 
-        public Book? GetById(int bookId, bool include = false, bool tracked = false)
+        public BookDto? GetById(int bookId)
         {
-            return _bookRepository.GetById(bookId, include, tracked);
+            var book=_bookRepository.GetById(bookId);
+            return book is null?null:BookMapper.ToDto(book);
         }
 
-        public void Save(Book book)
+
+        public List<BooksWithAuthorDto> BooksGroupByAuthor()
         {
-            if (book.Id == 0)
+            var booksWithAuthors = _bookRepository.GetAll();
+            var grouped = booksWithAuthors
+                .GroupBy(b => new { b.Author!.Id, b.Author.FirstName, b.Author.LastName })
+                .Select(g => new BooksWithAuthorDto
+                {
+                    Author = new AuthorDto
+                    {
+                        Id = g.Key.Id,
+                        FirstName = g.Key.FirstName,
+                        LastName = g.Key.LastName,
+                    },
+                    Books = g.Select(BookMapper.ToDto).ToList() // Changed from ToBookListDto to ToDto
+                }).ToList();
+            return grouped;
+        }
+
+        public bool Create(BookCreateDto bookDto, out List<string> errors)
+        {
+            errors = new List<string>();
+            Book book=BookMapper.ToEntity(bookDto);
+            if (_bookRepository.Exist(book.Title, book.AuthorId))
             {
-                _bookRepository.Add(book);
+                errors.Add("Book already exist");
+                return false;
             }
-            else
+            BookValidator bookValidator = new BookValidator();
+            if(!UniversalValidator.IsValid(book,bookValidator, out errors))
             {
-                _bookRepository.Update(book);
+                return false;
             }
+            _bookRepository.Add(book);
+            _bookRepository.SaveChanges();
+            return true;
+        }
+
+        public bool Update(BookUpdateDto bookDto, out List<string> errors)
+        {
+            errors = new List<string>();
+            Book book = BookMapper.ToEntity(bookDto);
+            if (_bookRepository.Exist(book.Title, book.AuthorId,book.Id))
+            {
+                errors.Add("Book already exist");
+                return false;
+            }
+            BookValidator bookValidator = new BookValidator();
+            if (!UniversalValidator.IsValid(book, bookValidator, out errors))
+            {
+                return false;
+            }
+            _bookRepository.Update(book);
+            _bookRepository.SaveChanges();
+            return true;
         }
     }
 }
