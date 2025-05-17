@@ -266,9 +266,9 @@ namespace EFIntro.Consola
                 return;
             }
             if (bookId == 0) return;
-            Console.WriteLine($"Are you sure to delete this book?");
+            Console.WriteLine($"Are you sure to delete this book? (y/n)");
             var response = Console.ReadKey().KeyChar;
-            if (response.ToString().ToUpper() == "S")
+            if (response.ToString().ToUpper() == "Y")
             {
                 if(bookService.Delete(bookId,out var errors))
                 {

@@ -1,4 +1,5 @@
-﻿using EFIntro.Data.Interfaces;
+﻿using EFIntro.Data;
+using EFIntro.Data.Interfaces;
 using EFIntro.Entities;
 using EFIntro.Service.DTOs.Author;
 using EFIntro.Service.DTOs.Book;
@@ -10,16 +11,16 @@ namespace EFIntro.Service.Services
 {
     public class AuthorService : IAuthorService
     {
-        private readonly IAuthorRepository _authorRepository = null!;
+        private readonly IUnitOfWork _unitOfWork = null!;
 
-        public AuthorService(IAuthorRepository repository)
+        public AuthorService(IUnitOfWork unitOfWork)
         {
-            _authorRepository = repository;
+            _unitOfWork = unitOfWork;
         }
 
         public List<AuthorBooksCountDto> AuthorsWithBooksCount()
         {
-            var authorWithBooks = _authorRepository.GetAllWithBooks();
+            var authorWithBooks = _unitOfWork.Authors.GetAllWithBooks();
             return authorWithBooks.Select(a => new AuthorBooksCountDto
             {
                 Id = a.Id,
@@ -36,7 +37,7 @@ namespace EFIntro.Service.Services
         {
             errors = new List<string>();
             Author author=AuthorMapper.ToEntity(authorDto);
-            if (_authorRepository.Exist(authorDto.FirstName, 
+            if (_unitOfWork.Authors.Exist(authorDto.FirstName, 
                     authorDto.LastName))
             {
                 errors.Add("Author already exist");
@@ -47,8 +48,8 @@ namespace EFIntro.Service.Services
             {
                 return false;
             }
-            _authorRepository.Add(author);
-            _authorRepository.SaveChanges();
+            _unitOfWork.Authors.Add(author);
+            _unitOfWork.Complete();
             return true;
         }
 
@@ -57,7 +58,7 @@ namespace EFIntro.Service.Services
             errors = new List<string>();
             authorCreated = null;
             Author author = AuthorMapper.ToEntity(authorDto);
-            if (_authorRepository.Exist(authorDto.FirstName,
+            if (_unitOfWork.Authors.Exist(authorDto.FirstName,
                     authorDto.LastName))
             {
                 errors.Add("Author already exist");
@@ -68,8 +69,8 @@ namespace EFIntro.Service.Services
             {
                 return false;
             }
-            _authorRepository.Add(author);
-            _authorRepository.SaveChanges();
+            _unitOfWork.Authors.Add(author);
+            _unitOfWork.Complete();
             authorCreated = AuthorMapper.ToDto(author);
             return true;
         }
@@ -77,36 +78,36 @@ namespace EFIntro.Service.Services
         public bool Delete(int authorId, out List<string>errors)
         {
             errors = new List<string>();
-            if(_authorRepository.GetById(authorId) is null)
+            if(_unitOfWork.Authors.GetById(authorId) is null)
             {
                 errors.Add("Author does not exist!!");
                 return false;
             }
-            if (_authorRepository.HasDependencies(authorId))
+            if (_unitOfWork.Authors.HasDependencies(authorId))
             {
                 //TODO: Pedir al otro repo los libros
                 errors.Add("Author with dependencies!!!");
                 return false;
             }
-            _authorRepository.Delete(authorId);
-            _authorRepository.SaveChanges();
+            _unitOfWork.Authors.Delete(authorId);
+            _unitOfWork.Complete();
             return true;
         }
 
         public bool Exist(string firstName, string lastName, int? excludeId = null)
         {
-            return _authorRepository.Exist(firstName, lastName, excludeId);
+            return _unitOfWork.Authors.Exist(firstName, lastName, excludeId);
         }
 
         public List<AuthorDto> GetAll(string sortedBy = "LastName")
         {
-            var authors=_authorRepository.GetAll(sortedBy);
+            var authors=_unitOfWork.Authors.GetAll(sortedBy);
             return authors.Select(AuthorMapper.ToDto).ToList();
         }
 
         public List<AuthorWithBooksDto> GetAllWithBooks()
         {
-            var authorWithBooks=_authorRepository.GetAllWithBooks();
+            var authorWithBooks=_unitOfWork.Authors.GetAllWithBooks();
             return authorWithBooks.Select(a=>new AuthorWithBooksDto
             {
                 Id = a.Id,
@@ -119,13 +120,13 @@ namespace EFIntro.Service.Services
 
         public AuthorDto? GetById(int authorId)
         {
-            var author= _authorRepository.GetById(authorId);
+            var author= _unitOfWork.Authors.GetById(authorId);
             return author is null?null: AuthorMapper.ToDto(author);
         }
 
         public AuthorDto? GetByName(string firstName, string lastName)
         {
-            var author= _authorRepository.GetByName(firstName, lastName);
+            var author= _unitOfWork.Authors.GetByName(firstName, lastName);
             return author is null ? null : AuthorMapper.ToDto(author);
 
         }
@@ -134,7 +135,7 @@ namespace EFIntro.Service.Services
         {
             errors = new List<string>();
             Author author = AuthorMapper.ToEntity(authorDto);
-            if(_authorRepository.Exist(authorDto.FirstName, 
+            if(_unitOfWork.Authors.Exist(authorDto.FirstName, 
                 authorDto.LastName,
                 authorDto.Id))
             {
@@ -146,8 +147,8 @@ namespace EFIntro.Service.Services
             {
                 return false;
             }
-            _authorRepository.Update(author);
-            _authorRepository.SaveChanges();
+            _unitOfWork.Authors.Update(author);
+            _unitOfWork.Complete();
             return true;
 
         }

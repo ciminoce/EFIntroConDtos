@@ -24,6 +24,8 @@ namespace EFIntro.Ioc
             services.AddScoped<IAuthorService, AuthorService>();
             services.AddScoped<IBookService, BookService>();
 
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+
             return services.BuildServiceProvider();
 
 
